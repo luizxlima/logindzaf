@@ -146,7 +146,7 @@ button {
     url('/bg.png') center/cover no-repeat;
 }
 
-/* 🔥 MOBILE REAL (IGUAL HOTMART) */
+/* 🔥 MOBILE REAL */
 @media (max-width: 900px) {
   body {
     display: block;
@@ -163,8 +163,6 @@ button {
     height: auto;
     padding: 40px 20px;
     background: #f5f5f5;
-
-    /* 🔥 REMOVE comportamento de sidebar */
     display: block;
   }
 
@@ -181,11 +179,6 @@ button {
 
   h1 {
     font-size: 26px;
-    margin-top: 10px;
-  }
-
-  .subtitle {
-    margin-bottom: 20px;
   }
 
   input {
@@ -201,7 +194,6 @@ button {
   .footer {
     text-align: center;
     margin-top: 30px;
-    display: block;
   }
 }
 </style>
@@ -260,7 +252,109 @@ button {
 <div class="right"></div>
 
 <script>
-// (seu JS igual — mantido)
+const domain = "https://sso.dozeroafluencia.com";
+const client_id = "2qjWADjQ2sCid8z9QY2oM1QgUvX3nBz6";
+
+const TEST_MODE = true;
+
+let countdown = 30;
+let timer;
+
+// STEP 1
+function sendCode() {
+  const email = document.getElementById("email").value;
+
+  if (!email) {
+    alert("Digite um email válido");
+    return;
+  }
+
+  if (TEST_MODE) {
+    goToCodeStep(email);
+    return;
+  }
+
+  fetch(domain + "/passwordless/start", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      client_id,
+      connection: "email",
+      email,
+      send: "code"
+    })
+  }).then(() => goToCodeStep(email));
+}
+
+// STEP 2
+function goToCodeStep(email) {
+  document.getElementById("step-email").style.display = "none";
+  document.getElementById("step-code").style.display = "block";
+
+  document.getElementById("emailText").innerText =
+    "Enviamos um código para " + email;
+
+  startCooldown();
+  setTimeout(focusHiddenInput, 100);
+}
+
+// CODE INPUT
+function focusHiddenInput() {
+  document.getElementById("code-hidden").focus();
+}
+
+function handleCodeInput() {
+  const input = document.getElementById("code-hidden");
+  let value = input.value.replace(/\D/g, "").slice(0, 6);
+  input.value = value;
+
+  for (let i = 0; i < 6; i++) {
+    const box = document.getElementById("box" + i);
+    box.innerText = value[i] || "";
+    box.classList.remove("active");
+  }
+
+  if (value.length < 6) {
+    document.getElementById("box" + value.length).classList.add("active");
+  }
+}
+
+// RESEND
+function startCooldown() {
+  const btn = document.getElementById("resendBtn");
+  btn.disabled = true;
+
+  countdown = 30;
+
+  timer = setInterval(() => {
+    countdown--;
+    btn.innerText = "Reenviar código (" + countdown + "s)";
+
+    if (countdown <= 0) {
+      clearInterval(timer);
+      btn.disabled = false;
+      btn.innerText = "Reenviar código";
+    }
+  }, 1000);
+}
+
+// VERIFY
+function verifyCode() {
+  const code = document.getElementById("code-hidden").value;
+
+  if (TEST_MODE) {
+    if (code === "123456") {
+      window.location.href = "https://membros.dozeroafluencia.com/";
+    } else {
+      document.getElementById("msg").innerText = "Use o código 123456";
+    }
+  }
+}
+
+// GOOGLE
+function loginGoogle() {
+  window.location.href = "https://membros.dozeroafluencia.com/";
+}
 </script>
 
 </body>
