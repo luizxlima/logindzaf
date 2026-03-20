@@ -20,15 +20,13 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  background: white;
+  z-index: 2;
 }
 
-.left img.logo {
+.logo {
   width: 60px;
   margin-bottom: 20px;
-}
-
-h2 {
-  margin-bottom: 10px;
 }
 
 input {
@@ -63,7 +61,7 @@ button {
   margin: 15px 0;
 }
 
-/* LADO DIREITO */
+/* BACKGROUND */
 .right {
   flex: 1;
   background: 
@@ -71,13 +69,23 @@ button {
     url('/bg.png') center center / cover no-repeat;
 }
 
-/* RESPONSIVO */
+/* MOBILE: mantém background */
 @media (max-width: 900px) {
-  .right {
-    display: none;
+  body {
+    flex-direction: column;
   }
+
+  .right {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
   .left {
     width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.95);
   }
 }
 </style>
@@ -90,17 +98,33 @@ button {
   <img class="logo" src="/logo.png" />
 
   <h2>Entrar</h2>
-  <p>Choose how you want to log into your account</p>
 
-  <input type="email" id="email" placeholder="Enter your email address" />
-  <button class="primary" onclick="sendCode()">Log in</button>
+  <!-- STEP 1 -->
 
-  <div class="divider">or</div>
+  <div id="step-email">
+    <input type="email" id="email" placeholder="Digite seu email" />
+    <button class="primary" onclick="sendCode()">Continuar</button>
 
-<button class="google" onclick="loginGoogle()">Enter with Google</button>
+```
+<div class="divider">ou</div>
+<button class="google" onclick="loginGoogle()">Entrar com Google</button>
+```
 
-  <input type="text" id="code" placeholder="Enter code" />
-  <button onclick="verifyCode()">Confirm code</button>
+  </div>
+
+  <!-- STEP 2 -->
+
+  <div id="step-code" style="display:none;">
+    <p id="emailText"></p>
+
+```
+<input type="text" id="code" placeholder="Digite o código" />
+<button class="primary" onclick="verifyCode()">Confirmar</button>
+
+<button id="resendBtn" disabled>Reenviar código (30s)</button>
+```
+
+  </div>
 
   <p id="msg"></p>
 </div>
@@ -111,8 +135,16 @@ button {
 const domain = "https://sso.dozeroafluencia.com";
 const client_id = "2qjWADjQ2sCid8z9QY2oM1QgUvX3nBz6";
 
+let countdown = 30;
+let timer;
+
 async function sendCode() {
   const email = document.getElementById("email").value;
+
+  if (!email) {
+    alert("Digite um email válido");
+    return;
+  }
 
   await fetch(domain + "/passwordless/start", {
     method: "POST",
@@ -125,8 +157,35 @@ async function sendCode() {
     })
   });
 
-  document.getElementById("msg").innerText = "Código enviado!";
+  // troca de tela
+  document.getElementById("step-email").style.display = "none";
+  document.getElementById("step-code").style.display = "block";
+
+  document.getElementById("emailText").innerText =
+    "Enviamos um código para " + email;
+
+  startCooldown();
 }
+
+function startCooldown() {
+  const btn = document.getElementById("resendBtn");
+  btn.disabled = true;
+
+  countdown = 30;
+
+  timer = setInterval(() => {
+    countdown--;
+    btn.innerText = "Reenviar código (" + countdown + "s)";
+
+    if (countdown <= 0) {
+      clearInterval(timer);
+      btn.disabled = false;
+      btn.innerText = "Reenviar código";
+    }
+  }, 1000);
+}
+
+document.getElementById("resendBtn").onclick = sendCode;
 
 async function verifyCode() {
   const email = document.getElementById("email").value;
