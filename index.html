@@ -136,6 +136,9 @@ button {
 const domain = "https://sso.dozeroafluencia.com";
 const client_id = "2qjWADjQ2sCid8z9QY2oM1QgUvX3nBz6";
 
+// 🔥 MODO TESTE (true = bypass total)
+const TEST_MODE = true;
+
 let countdown = 30;
 let timer;
 
@@ -144,6 +147,12 @@ async function sendCode() {
 
   if (!email) {
     alert("Digite um email válido");
+    return;
+  }
+
+  // 👉 MODO TESTE (não chama Auth0)
+  if (TEST_MODE) {
+    goToCodeStep(email);
     return;
   }
 
@@ -158,6 +167,10 @@ async function sendCode() {
     })
   });
 
+  goToCodeStep(email);
+}
+
+function goToCodeStep(email) {
   document.getElementById("step-email").style.display = "none";
   document.getElementById("step-code").style.display = "block";
 
@@ -191,6 +204,17 @@ async function verifyCode() {
   const email = document.getElementById("email").value;
   const code = document.getElementById("code").value;
 
+  // 👉 MODO TESTE
+  if (TEST_MODE) {
+    if (code === "123456") {
+      window.location.href = "https://membros.dozeroafluencia.com/";
+    } else {
+      document.getElementById("msg").innerText = "Use o código 123456";
+    }
+    return;
+  }
+
+  // 👉 MODO REAL (Auth0)
   const res = await fetch(domain + "/oauth/token", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
@@ -213,6 +237,12 @@ async function verifyCode() {
 }
 
 function loginGoogle() {
+  // 👉 no modo teste pode redirecionar direto também
+  if (TEST_MODE) {
+    window.location.href = "https://membros.dozeroafluencia.com/";
+    return;
+  }
+
   window.location.href =
     domain + "/authorize?response_type=code" +
     "&client_id=" + client_id +
