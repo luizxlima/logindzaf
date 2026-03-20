@@ -1,1 +1,119 @@
+<!DOCTYPE html>
 
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      height: 100vh;
+      align-items: center;
+      justify-content: center;
+    }
+    .box {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 10px;
+      width: 300px;
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: none;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h2>Entrar</h2>
+
+```
+<input type="email" id="email" placeholder="Seu email" />
+<button onclick="sendCode()">Receber código</button>
+
+<input type="text" id="code" placeholder="Código" />
+<button onclick="verifyCode()">Entrar</button>
+
+<p id="msg"></p>
+```
+
+  </div>
+
+<script>
+const domain = "https://sso.dozeroafluencia.com";
+const client_id = "2qjWADjQ2sCid8z9QY2oM1QgUvX3nBz6";
+
+// cooldown simples
+let cooldown = false;
+
+async function sendCode() {
+  if (cooldown) {
+    alert("Aguarde alguns segundos antes de pedir outro código");
+    return;
+  }
+
+  const email = document.getElementById("email").value;
+
+  await fetch(domain + "/passwordless/start", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      client_id: client_id,
+      connection: "email",
+      email: email,
+      send: "code"
+    })
+  });
+
+  document.getElementById("msg").innerText = "Código enviado!";
+  
+  cooldown = true;
+  setTimeout(() => cooldown = false, 30000); // 30s
+}
+
+async function verifyCode() {
+  const email = document.getElementById("email").value;
+  const code = document.getElementById("code").value;
+
+  const res = await fetch(domain + "/oauth/token", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      grant_type: "http://auth0.com/oauth/grant-type/passwordless/otp",
+      client_id: client_id,
+      username: email,
+      otp: code,
+      realm: "email"
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.access_token) {
+    // REDIRECT PARA CANVAS
+    window.location.href = "https://membros.dozeroafluencia.com/";
+  } else {
+    document.getElementById("msg").innerText = "Código inválido!";
+  }
+}
+</script>
+
+</body>
+</html>
