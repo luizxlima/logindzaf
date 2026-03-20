@@ -5,96 +5,128 @@
 <title>Login</title>
 
 <style>
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   display: flex;
   height: 100vh;
 }
 
-/* LADO ESQUERDO */
+/* LEFT PANEL */
 .left {
-  width: 400px;
-  padding: 40px;
+  width: 420px;
+  padding: 60px 50px 30px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  background: white;
+  justify-content: space-between;
+  background: #f5f5f5;
+}
+
+/* TOP CONTENT */
+.content {
+  width: 100%;
 }
 
 .logo {
   width: 60px;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
 }
 
-h2 {
-  margin-bottom: 5px;
+h1 {
+  font-size: 28px;
+  margin-bottom: 10px;
 }
 
 .subtitle {
   color: #666;
   font-size: 14px;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
+/* LABEL */
+.label {
+  font-size: 13px;
+  margin-bottom: 5px;
+  display: block;
+}
+
+/* INPUT */
 input {
   width: 100%;
-  padding: 14px;
-  margin-top: 8px;
-  border-radius: 8px;
+  padding: 12px;
+  border-radius: 6px;
   border: 1px solid #ccc;
-  font-size: 16px;
+  font-size: 14px;
 }
 
+/* BUTTON */
 button {
   width: 100%;
-  padding: 14px;
-  margin-top: 12px;
-  border-radius: 8px;
+  padding: 12px;
+  border-radius: 6px;
   border: none;
+  margin-top: 12px;
+  font-size: 14px;
   cursor: pointer;
-  font-size: 15px;
 }
 
+/* PRIMARY */
 .primary {
   background: #3b5cff;
   color: white;
-  font-weight: bold;
+  font-weight: 600;
 }
 
+/* GOOGLE */
 .google {
   background: white;
   border: 1px solid #ccc;
 }
 
+/* DIVIDER */
 .divider {
-  text-align: center;
+  display: flex;
+  align-items: center;
   margin: 20px 0;
   color: #999;
+  font-size: 13px;
 }
 
-/* 🔥 CODE BOXES */
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #ddd;
+}
+
+.divider span {
+  margin: 0 10px;
+}
+
+/* CODE */
 .code-container {
   display: flex;
-  gap: 10px;
-  margin-top: 15px;
-  justify-content: space-between;
-  position: relative;
+  gap: 8px;
+  margin-top: 10px;
   cursor: text;
 }
 
 .code-box {
-  width: 45px;
-  height: 55px;
+  width: 42px;
+  height: 52px;
   border: 1px solid #ccc;
-  border-radius: 8px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
   font-weight: bold;
   background: #fff;
-  transition: all 0.2s;
 }
 
 .code-box.active {
@@ -104,19 +136,34 @@ button {
 
 #code-hidden {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 1px;
-  height: 1px;
   opacity: 0;
 }
 
-/* BACKGROUND */
+/* FOOTER */
+.footer {
+  font-size: 12px;
+  color: #777;
+}
+
+.footer a {
+  color: #3b5cff;
+  text-decoration: none;
+}
+
+.footer .signup {
+  margin-bottom: 20px;
+}
+
+.footer .powered {
+  margin-bottom: 10px;
+}
+
+/* RIGHT IMAGE */
 .right {
   flex: 1;
-  background: 
+  background:
     linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),
-    url('/bg.png') center center / cover no-repeat;
+    url('/bg.png') center/cover no-repeat;
 }
 
 /* MOBILE */
@@ -132,69 +179,82 @@ button {
 
   .left {
     width: 100%;
-    min-height: 100vh;
+    height: 100%;
     padding: 30px 20px;
-
-    display: flex;
-    flex-direction: column;
     justify-content: center;
   }
 
-  .logo {
-    margin: 0 auto 20px auto;
-    display: block;
-    width: 70px;
-  }
-
-  h2 {
-    text-align: left;
-  }
-
-  .subtitle {
-    text-align: left;
+  .footer {
+    display: none;
   }
 }
 </style>
-
 </head>
 
 <body>
 
 <div class="left">
-  <img class="logo" src="/logo.png" />
 
-  <h2>Entrar</h2>
-  <p class="subtitle">Escolha como deseja entrar na sua conta</p>
+  <div class="content">
+    <img src="/logo.png" class="logo">
 
-  <!-- STEP 1 -->
-  <div id="step-email">
-    <input type="email" id="email" placeholder="Digite seu email" />
-    <button class="primary" onclick="sendCode()">Entrar</button>
+    <h1>Conecte-se</h1>
+    <div class="subtitle">Escolha como deseja acessar sua conta.</div>
 
-    <div class="divider">ou</div>
+    <!-- STEP EMAIL -->
+    <div id="step-email">
+      <label class="label">E-mail</label>
+      <input type="email" id="email" placeholder="Insira seu endereço de e-mail">
 
-    <button class="google" onclick="loginGoogle()">Entrar com Google</button>
-  </div>
+      <button class="primary" onclick="sendCode()">Conecte-se</button>
 
-  <!-- STEP 2 -->
-  <div id="step-code" style="display:none;">
-    <p id="emailText"></p>
+      <div class="divider"><span>ou</span></div>
 
-    <div class="code-container" onclick="focusHiddenInput()">
-      <input type="text" id="code-hidden" maxlength="6" oninput="handleCodeInput()" />
-      <div class="code-box" id="box0"></div>
-      <div class="code-box" id="box1"></div>
-      <div class="code-box" id="box2"></div>
-      <div class="code-box" id="box3"></div>
-      <div class="code-box" id="box4"></div>
-      <div class="code-box" id="box5"></div>
+      <button class="google" onclick="loginGoogle()">Entrar com o Google</button>
     </div>
 
-    <button class="primary" onclick="verifyCode()">Confirmar</button>
-    <button id="resendBtn" disabled>Reenviar código (30s)</button>
+    <!-- STEP CODE -->
+    <div id="step-code" style="display:none;">
+      <p id="emailText"></p>
+
+      <label class="label">Código</label>
+
+      <div class="code-container" onclick="focusHiddenInput()">
+        <input id="code-hidden" maxlength="6" oninput="handleCodeInput()">
+        <div class="code-box" id="box0"></div>
+        <div class="code-box" id="box1"></div>
+        <div class="code-box" id="box2"></div>
+        <div class="code-box" id="box3"></div>
+        <div class="code-box" id="box4"></div>
+        <div class="code-box" id="box5"></div>
+      </div>
+
+      <button class="primary" onclick="verifyCode()">Confirmar</button>
+      <button id="resendBtn" disabled>Reenviar código (30s)</button>
+
+      <div class="divider"><span>ou</span></div>
+
+      <button class="google">Faça login com a senha</button>
+    </div>
+
+    <p id="msg"></p>
   </div>
 
-  <p id="msg"></p>
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="signup">
+      Não tem uma conta? <a href="#">Inscrever-se</a>
+    </div>
+
+    <div class="powered">
+      Distribuído por <strong>hotmart</strong>
+    </div>
+
+    <div>
+      Apoiar — Termos de Uso — política de Privacidade
+    </div>
+  </div>
+
 </div>
 
 <div class="right"></div>
@@ -208,7 +268,6 @@ const TEST_MODE = true;
 let countdown = 30;
 let timer;
 
-// STEP 1
 async function sendCode() {
   const email = document.getElementById("email").value;
 
@@ -226,9 +285,9 @@ async function sendCode() {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({
-      client_id: client_id,
+      client_id,
       connection: "email",
-      email: email,
+      email,
       send: "code"
     })
   });
@@ -241,23 +300,15 @@ function goToCodeStep(email) {
   document.getElementById("step-code").style.display = "block";
 
   document.getElementById("emailText").innerText =
-    "Enviamos um código para " + email;
+    "Acesse sua caixa de entrada de e-mail em " + email + " e copie o código.";
 
   startCooldown();
 
-  setTimeout(() => {
-    focusHiddenInput();
-  }, 100);
+  setTimeout(() => focusHiddenInput(), 100);
 }
 
-// CODE UI
 function focusHiddenInput() {
-  const input = document.getElementById("code-hidden");
-  input.focus({ preventScroll: true });
-
-  if (!input.value) {
-    document.getElementById("box0").classList.add("active");
-  }
+  document.getElementById("code-hidden").focus({ preventScroll: true });
 }
 
 function handleCodeInput() {
@@ -272,13 +323,9 @@ function handleCodeInput() {
     box.classList.remove("active");
   }
 
-  let activeIndex = value.length;
-  if (activeIndex > 5) activeIndex = 5;
-
-  document.getElementById("box" + activeIndex).classList.add("active");
+  document.getElementById("box" + value.length)?.classList.add("active");
 }
 
-// RESEND
 function startCooldown() {
   const btn = document.getElementById("resendBtn");
   btn.disabled = true;
@@ -299,7 +346,6 @@ function startCooldown() {
 
 document.getElementById("resendBtn").onclick = sendCode;
 
-// VERIFY
 async function verifyCode() {
   const email = document.getElementById("email").value;
   const code = document.getElementById("code-hidden").value;
@@ -318,7 +364,7 @@ async function verifyCode() {
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({
       grant_type: "http://auth0.com/oauth/grant-type/passwordless/otp",
-      client_id: client_id,
+      client_id,
       username: email,
       otp: code,
       realm: "email"
@@ -334,7 +380,6 @@ async function verifyCode() {
   }
 }
 
-// GOOGLE
 function loginGoogle() {
   if (TEST_MODE) {
     window.location.href = "https://membros.dozeroafluencia.com/";
