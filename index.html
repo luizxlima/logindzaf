@@ -67,6 +67,8 @@ button {
   gap: 10px;
   margin-top: 10px;
   justify-content: space-between;
+  position: relative;
+  cursor: text;
 }
 
 .code-box {
@@ -180,7 +182,6 @@ button {
 const domain = "https://sso.dozeroafluencia.com";
 const client_id = "2qjWADjQ2sCid8z9QY2oM1QgUvX3nBz6";
 
-// 🔥 TROCAR AQUI DEPOIS
 const TEST_MODE = true;
 
 let countdown = 30;
@@ -222,11 +223,22 @@ function goToCodeStep(email) {
     "Enviamos um código para " + email;
 
   startCooldown();
+
+  // 🔥 foco automático + primeira caixa ativa
+  setTimeout(() => {
+    focusHiddenInput();
+  }, 100);
 }
 
 // CODE UI
 function focusHiddenInput() {
-  document.getElementById("code-hidden").focus();
+  const input = document.getElementById("code-hidden");
+
+  input.focus({ preventScroll: true });
+
+  if (!input.value) {
+    document.getElementById("box0").classList.add("active");
+  }
 }
 
 function handleCodeInput() {
@@ -241,9 +253,10 @@ function handleCodeInput() {
     box.classList.remove("active");
   }
 
-  if (value.length < 6) {
-    document.getElementById("box" + value.length).classList.add("active");
-  }
+  let activeIndex = value.length;
+  if (activeIndex > 5) activeIndex = 5;
+
+  document.getElementById("box" + activeIndex).classList.add("active");
 }
 
 // RESEND
