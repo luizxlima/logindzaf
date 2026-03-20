@@ -319,11 +319,10 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
       <h1>Entrar</h1>
       <div class="subtitle">Escolha como deseja entrar na sua conta</div>
 
-      <!-- Step 1: Email -->
       <div id="step-email-desktop">
         <label class="label">Email</label>
         <input id="email-desktop" type="email" placeholder="Digite seu email">
-        <div class="error-msg" id="error-email-desktop">Email inválido. Tente novamente.</div>
+        <div class="error-msg" id="error-email-desktop"></div>
         <button class="primary" id="btn-enter-desktop" onclick="sendCode('desktop')">Entrar</button>
 
         <div class="divider">ou</div>
@@ -339,7 +338,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
         </button>
       </div>
 
-      <!-- Step 2: Code -->
       <div id="step-code-desktop" style="display:none;">
         <p style="font-size:14px; color:#555; margin-bottom:16px;" id="emailText-desktop"></p>
 
@@ -353,7 +351,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
           <div class="code-box" id="d4"></div>
           <div class="code-box" id="d5"></div>
         </div>
-        <div class="error-msg" id="error-code-desktop">Código inválido ou expirado. Tente novamente.</div>
+        <div class="error-msg" id="error-code-desktop"></div>
 
         <button class="primary" id="btn-confirm-desktop" onclick="verifyCode('desktop')">Confirmar</button>
 
@@ -380,14 +378,13 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
       <img src="/logo.png" class="logo" alt="Logo">
     </div>
 
-    <!-- Step 1: Email -->
     <div id="step-email-mobile">
       <h1>Entrar</h1>
       <div class="subtitle">Escolha como deseja entrar na sua conta</div>
 
       <label class="label">Email</label>
       <input id="email-mobile" type="email" placeholder="Digite seu email">
-      <div class="error-msg" id="error-email-mobile">Email inválido. Tente novamente.</div>
+      <div class="error-msg" id="error-email-mobile"></div>
 
       <button class="primary" id="btn-enter-mobile" onclick="sendCode('mobile')">Entrar</button>
 
@@ -404,7 +401,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
       </button>
     </div>
 
-    <!-- Step 2: Code -->
     <div id="step-code-mobile" style="display:none;">
       <h1>Verifique seu email</h1>
       <div class="subtitle" id="emailText-mobile" style="margin-top:8px;"></div>
@@ -419,7 +415,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
         <div class="code-box" id="m4"></div>
         <div class="code-box" id="m5"></div>
       </div>
-      <div class="error-msg" id="error-code-mobile">Código inválido ou expirado. Tente novamente.</div>
+      <div class="error-msg" id="error-code-mobile"></div>
 
       <button class="primary" id="btn-confirm-mobile" onclick="verifyCode('mobile')">Confirmar</button>
 
@@ -436,14 +432,10 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 </div>
 
 <script>
-// =============================================
-// CONFIG AUTH0
-// =============================================
 const AUTH0_DOMAIN = "sso.dozeroafluencia.com";
 const AUTH0_CLIENT_ID = "2qjWADjQ2sCid8z9QY2oM1QgUvX3nBz6";
 const CANVAS_URL = "https://membros.dozeroafluencia.com/";
 
-// armazena email entre steps
 let currentEmail = "";
 let countdownTimer = null;
 
@@ -462,7 +454,7 @@ function loginGoogle() {
 }
 
 // =============================================
-// SEND CODE (Passwordless)
+// SEND CODE
 // =============================================
 async function sendCode(type) {
   const email = document.getElementById(`email-${type}`).value.trim();
@@ -472,6 +464,7 @@ async function sendCode(type) {
   errorEl.style.display = "none";
 
   if (!email || !email.includes("@")) {
+    errorEl.innerText = "Digite um email válido.";
     errorEl.style.display = "block";
     return;
   }
@@ -480,16 +473,13 @@ async function sendCode(type) {
   btn.innerText = "Enviando...";
 
   try {
-    const res = await fetch(`https://${AUTH0_DOMAIN}/passwordless/start`, {
+    const res = await fetch("/api/send-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        client_id: AUTH0_CLIENT_ID,
-        connection: "email",
-        email: email,
-        send: "code"
-      })
+      body: JSON.stringify({ email })
     });
+
+    const data = await res.json();
 
     if (res.ok) {
       currentEmail = email;
@@ -500,7 +490,7 @@ async function sendCode(type) {
       startCountdown(type);
       setTimeout(() => focusInput(type), 150);
     } else {
-      errorEl.innerText = "Erro ao enviar código. Verifique o email e tente novamente.";
+      errorEl.innerText = data.error || "Erro ao enviar código. Tente novamente.";
       errorEl.style.display = "block";
     }
   } catch (e) {
@@ -520,19 +510,13 @@ async function resendCode(type) {
   btn.disabled = true;
 
   try {
-    await fetch(`https://${AUTH0_DOMAIN}/passwordless/start`, {
+    await fetch("/api/send-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        client_id: AUTH0_CLIENT_ID,
-        connection: "email",
-        email: currentEmail,
-        send: "code"
-      })
+      body: JSON.stringify({ email: currentEmail })
     });
   } catch (e) {}
 
-  // reseta os boxes
   const prefix = type === "mobile" ? "m" : "d";
   for (let i = 0; i < 6; i++) {
     const box = document.getElementById(prefix + i);
@@ -555,13 +539,14 @@ function startCountdown(type) {
   let seconds = 60;
 
   btn.disabled = true;
-  counter.innerText = seconds;
+  btn.innerHTML = `Reenviar código (<span id="countdown-${type}">${seconds}</span>s)`;
 
   if (countdownTimer) clearInterval(countdownTimer);
 
   countdownTimer = setInterval(() => {
     seconds--;
-    counter.innerText = seconds;
+    const el = document.getElementById(`countdown-${type}`);
+    if (el) el.innerText = seconds;
     if (seconds <= 0) {
       clearInterval(countdownTimer);
       btn.disabled = false;
@@ -571,7 +556,7 @@ function startCountdown(type) {
 }
 
 // =============================================
-// VERIFY CODE (OTP)
+// VERIFY CODE
 // =============================================
 async function verifyCode(type) {
   const code = document.getElementById(`code-${type}`).value;
@@ -590,26 +575,18 @@ async function verifyCode(type) {
   btn.innerText = "Verificando...";
 
   try {
-    const res = await fetch(`https://${AUTH0_DOMAIN}/oauth/token`, {
+    const res = await fetch("/api/verify-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        grant_type: "http://auth0.com/oauth/grant-type/passwordless/otp",
-        client_id: AUTH0_CLIENT_ID,
-        username: currentEmail,
-        otp: code,
-        realm: "email",
-        scope: "openid email profile",
-        redirect_uri: "https://membros.dozeroafluencia.com/login/oauth2/callback"
-      })
+      body: JSON.stringify({ email: currentEmail, code })
     });
 
     const data = await res.json();
 
-    if (data.access_token) {
+    if (res.ok && data.success) {
       window.location.href = CANVAS_URL;
     } else {
-      errorEl.innerText = "Código inválido ou expirado. Tente novamente.";
+      errorEl.innerText = data.error || "Código inválido ou expirado.";
       errorEl.style.display = "block";
       btn.disabled = false;
       btn.innerText = "Confirmar";
