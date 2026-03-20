@@ -27,22 +27,33 @@ body {
   margin-bottom: 20px;
 }
 
+h2 {
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
 input {
   width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  border-radius: 6px;
+  padding: 14px;
+  margin-top: 8px;
+  border-radius: 8px;
   border: 1px solid #ccc;
   font-size: 16px;
 }
 
 button {
   width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  border-radius: 6px;
+  padding: 14px;
+  margin-top: 12px;
+  border-radius: 8px;
   border: none;
   cursor: pointer;
+  font-size: 15px;
 }
 
 .primary {
@@ -58,14 +69,15 @@ button {
 
 .divider {
   text-align: center;
-  margin: 15px 0;
+  margin: 20px 0;
+  color: #999;
 }
 
 /* 🔥 CODE BOXES */
 .code-container {
   display: flex;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 15px;
   justify-content: space-between;
   position: relative;
   cursor: text;
@@ -120,18 +132,26 @@ button {
 
   .left {
     width: 100%;
-    height: 100%;
-    background: transparent;
+    min-height: 100vh;
     padding: 30px 20px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .logo {
     margin: 0 auto 20px auto;
     display: block;
+    width: 70px;
   }
 
-  h2, p {
-    text-align: center;
+  h2 {
+    text-align: left;
+  }
+
+  .subtitle {
+    text-align: left;
   }
 }
 </style>
@@ -144,11 +164,12 @@ button {
   <img class="logo" src="/logo.png" />
 
   <h2>Entrar</h2>
+  <p class="subtitle">Escolha como deseja entrar na sua conta</p>
 
   <!-- STEP 1 -->
   <div id="step-email">
     <input type="email" id="email" placeholder="Digite seu email" />
-    <button class="primary" onclick="sendCode()">Continuar</button>
+    <button class="primary" onclick="sendCode()">Entrar</button>
 
     <div class="divider">ou</div>
 
@@ -224,7 +245,6 @@ function goToCodeStep(email) {
 
   startCooldown();
 
-  // 🔥 foco automático + primeira caixa ativa
   setTimeout(() => {
     focusHiddenInput();
   }, 100);
@@ -233,7 +253,6 @@ function goToCodeStep(email) {
 // CODE UI
 function focusHiddenInput() {
   const input = document.getElementById("code-hidden");
-
   input.focus({ preventScroll: true });
 
   if (!input.value) {
