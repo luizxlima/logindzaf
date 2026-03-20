@@ -2,73 +2,114 @@
 
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Login</title>
-  <style>
-    body {
-      font-family: Arial;
-      background: #0f172a;
-      color: white;
-      display: flex;
-      height: 100vh;
-      align-items: center;
-      justify-content: center;
-    }
-    .box {
-      background: #1e293b;
-      padding: 30px;
-      border-radius: 10px;
-      width: 300px;
-      text-align: center;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
-      border: none;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Login</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  display: flex;
+  height: 100vh;
+}
+
+/* LADO ESQUERDO */
+.left {
+  width: 400px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.left img.logo {
+  width: 60px;
+  margin-bottom: 20px;
+}
+
+h2 {
+  margin-bottom: 10px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.primary {
+  background: #3b5cff;
+  color: white;
+}
+
+.google {
+  background: white;
+  border: 1px solid #ccc;
+}
+
+.divider {
+  text-align: center;
+  margin: 15px 0;
+}
+
+/* LADO DIREITO */
+.right {
+  flex: 1;
+  background: url('https://via.placeholder.com/1200x800') center/cover;
+}
+
+/* RESPONSIVO */
+@media (max-width: 900px) {
+  .right {
+    display: none;
+  }
+  .left {
+    width: 100%;
+  }
+}
+</style>
+
 </head>
 
 <body>
-  <div class="box">
-    <h2>Entrar</h2>
 
-```
-<input type="email" id="email" placeholder="Seu email" />
-<button onclick="sendCode()">Receber código</button>
+<div class="left">
+  <img class="logo" src="https://via.placeholder.com/60" />
 
-<input type="text" id="code" placeholder="Código" />
-<button onclick="verifyCode()">Entrar</button>
+  <h2>Log in</h2>
+  <p>Choose how you want to log into your account</p>
 
-<p id="msg"></p>
-```
+  <input type="email" id="email" placeholder="Enter your email address" />
+  <button class="primary" onclick="sendCode()">Log in</button>
 
-  </div>
+  <div class="divider">or</div>
+
+<button class="google" onclick="loginGoogle()">Enter with Google</button>
+
+  <input type="text" id="code" placeholder="Enter code" />
+  <button onclick="verifyCode()">Confirm code</button>
+
+  <p id="msg"></p>
+</div>
+
+<div class="right"></div>
 
 <script>
 const domain = "https://sso.dozeroafluencia.com";
 const client_id = "2qjWADjQ2sCid8z9QY2oM1QgUvX3nBz6";
 
-// cooldown simples
-let cooldown = false;
-
 async function sendCode() {
-  if (cooldown) {
-    alert("Aguarde alguns segundos antes de pedir outro código");
-    return;
-  }
-
   const email = document.getElementById("email").value;
 
   await fetch(domain + "/passwordless/start", {
@@ -83,9 +124,6 @@ async function sendCode() {
   });
 
   document.getElementById("msg").innerText = "Código enviado!";
-  
-  cooldown = true;
-  setTimeout(() => cooldown = false, 30000); // 30s
 }
 
 async function verifyCode() {
@@ -107,11 +145,18 @@ async function verifyCode() {
   const data = await res.json();
 
   if (data.access_token) {
-    // REDIRECT PARA CANVAS
     window.location.href = "https://membros.dozeroafluencia.com/";
   } else {
     document.getElementById("msg").innerText = "Código inválido!";
   }
+}
+
+function loginGoogle() {
+  window.location.href =
+    domain + "/authorize?response_type=code" +
+    "&client_id=" + client_id +
+    "&connection=google-oauth2" +
+    "&redirect_uri=https://login.dozeroafluencia.com";
 }
 </script>
 
