@@ -20,14 +20,14 @@ module.exports = async function handler(req, res) {
         username: email,
         otp: code,
         realm: "email",
-        scope: "openid email profile",
-        redirect_uri: "https://membros.dozeroafluencia.com/login/oauth2/callback"
+        scope: "openid email profile"
       })
     });
 
     const data = await response.json();
 
     if (data.access_token) {
+      // código válido — browser vai redirecionar via /authorize
       return res.status(200).json({ success: true });
     } else {
       console.error("Auth0 OTP error:", data);
