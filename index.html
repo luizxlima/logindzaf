@@ -435,21 +435,26 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 const AUTH0_DOMAIN = "sso.dozeroafluencia.com";
 const AUTH0_CLIENT_ID = "2qjWADjQ2sCid8z9QY2oM1QgUvX3nBz6";
 const CANVAS_URL = "https://membros.dozeroafluencia.com/";
+const REDIRECT_URI = "https://membros.dozeroafluencia.com/login/oauth2/callback";
 
 let currentEmail = "";
 let countdownTimer = null;
 
 // =============================================
-// GOOGLE LOGIN
+// GOOGLE LOGIN — com state para evitar erro
 // =============================================
 function loginGoogle() {
+  const state = Math.random().toString(36).substring(2, 15);
+
   const params = new URLSearchParams({
     response_type: "code",
     client_id: AUTH0_CLIENT_ID,
-    redirect_uri: "https://membros.dozeroafluencia.com/login/oauth2/callback",
+    redirect_uri: REDIRECT_URI,
     scope: "openid email profile",
-    connection: "google-oauth2"
+    connection: "google-oauth2",
+    state: state
   });
+
   window.location.href = `https://${AUTH0_DOMAIN}/authorize?${params}`;
 }
 
@@ -535,7 +540,6 @@ async function resendCode(type) {
 // =============================================
 function startCountdown(type) {
   const btn = document.getElementById(`resend-${type}`);
-  const counter = document.getElementById(`countdown-${type}`);
   let seconds = 60;
 
   btn.disabled = true;
@@ -556,7 +560,9 @@ function startCountdown(type) {
 }
 
 // =============================================
-// VERIFY CODE
+// VERIFY CODE — valida no backend, depois
+// redireciona via /authorize para o Canvas
+// receber o callback corretamente
 // =============================================
 async function verifyCode(type) {
   const code = document.getElementById(`code-${type}`).value;
@@ -584,7 +590,21 @@ async function verifyCode(type) {
     const data = await res.json();
 
     if (res.ok && data.success) {
-      window.location.href = CANVAS_URL;
+      // código válido — redireciona pelo authorize para o Canvas
+      // receber o callback e criar a sessão corretamente
+      const state = Math.random().toString(36).substring(2, 15);
+
+      const params = new URLSearchParams({
+        response_type: "code",
+        client_id: AUTH0_CLIENT_ID,
+        redirect_uri: REDIRECT_URI,
+        scope: "openid email profile",
+        connection: "email",
+        login_hint: currentEmail,
+        state: state
+      });
+
+      window.location.href = `https://${AUTH0_DOMAIN}/authorize?${params}`;
     } else {
       errorEl.innerText = data.error || "Código inválido ou expirado.";
       errorEl.style.display = "block";
