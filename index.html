@@ -640,7 +640,10 @@ function handleCode(type) {
     document.getElementById(prefix + value.length).classList.add("active");
   }
 
-  if (value.length === 6) verifyCode(type);
+  if (value.length === 6 && !input.dataset.sent) {
+  input.dataset.sent = "true";
+  verifyCode(type);
+}
 }
 
 function goBack(type) {
