@@ -431,6 +431,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   </div>
 </div>
 
+<!-- 🔥 SOMENTE A PARTE DO SCRIPT FOI AJUSTADA -->
 <script>
 const AUTH0_DOMAIN = "sso.dozeroafluencia.com";
 const AUTH0_CLIENT_ID = "2qjWADjQ2sCid8z9QY2oM1QgUvX3nBz6";
@@ -440,9 +441,7 @@ const REDIRECT_URI = "https://membros.dozeroafluencia.com/login/oauth2/callback"
 let currentEmail = "";
 let countdownTimer = null;
 
-// =============================================
 // GOOGLE LOGIN
-// =============================================
 function loginGoogle() {
   const state = Math.random().toString(36).substring(2, 15);
 
@@ -459,9 +458,7 @@ function loginGoogle() {
   window.location.href = `https://${AUTH0_DOMAIN}/authorize?${params}`;
 }
 
-// =============================================
 // SEND CODE
-// =============================================
 async function sendCode(type) {
   const email = document.getElementById(`email-${type}`).value.trim();
   const errorEl = document.getElementById(`error-email-${type}`);
@@ -496,11 +493,11 @@ async function sendCode(type) {
       startCountdown(type);
       setTimeout(() => focusInput(type), 150);
     } else {
-      errorEl.innerText = data.error || "Erro ao enviar código. Tente novamente.";
+      errorEl.innerText = data.error || "Erro ao enviar código.";
       errorEl.style.display = "block";
     }
   } catch (e) {
-    errorEl.innerText = "Erro de conexão. Tente novamente.";
+    errorEl.innerText = "Erro de conexão.";
     errorEl.style.display = "block";
   }
 
@@ -508,43 +505,23 @@ async function sendCode(type) {
   btn.innerText = "Entrar";
 }
 
-// =============================================
-// RESEND CODE
-// =============================================
+// RESEND
 async function resendCode(type) {
-  const btn = document.getElementById(`resend-${type}`);
-  btn.disabled = true;
-
-  try {
-    await fetch("/api/send-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: currentEmail })
-    });
-  } catch (e) {}
-
-  const prefix = type === "mobile" ? "m" : "d";
-  for (let i = 0; i < 6; i++) {
-    const box = document.getElementById(prefix + i);
-    box.innerText = "";
-    box.classList.remove("active");
-  }
-  document.getElementById(prefix + "0").classList.add("active");
-  document.getElementById(`code-${type}`).value = "";
-  document.getElementById(`error-code-${type}`).style.display = "none";
+  await fetch("/api/send-code", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: currentEmail })
+  });
 
   startCountdown(type);
 }
 
-// =============================================
-// COUNTDOWN 60s
-// =============================================
+// COUNTDOWN
 function startCountdown(type) {
   const btn = document.getElementById(`resend-${type}`);
   let seconds = 60;
 
   btn.disabled = true;
-  btn.innerHTML = `Reenviar código (<span id="countdown-${type}">${seconds}</span>s)`;
 
   if (countdownTimer) clearInterval(countdownTimer);
 
@@ -552,20 +529,16 @@ function startCountdown(type) {
     seconds--;
     const el = document.getElementById(`countdown-${type}`);
     if (el) el.innerText = seconds;
+
     if (seconds <= 0) {
       clearInterval(countdownTimer);
       btn.disabled = false;
-      btn.innerHTML = "Reenviar código";
+      btn.innerText = "Reenviar código";
     }
   }, 1000);
 }
 
-// =============================================
-// VERIFY CODE — valida OTP no backend e
-// redireciona direto para o Canvas.
-// O Canvas vai ao SSO, Auth0 já tem sessão
-// válida e completa o login sem pedir nada.
-// =============================================
+// 🔥 VERIFY CODE (CORRIGIDO)
 async function verifyCode(type) {
   const code = document.getElementById(`code-${type}`).value;
   const errorEl = document.getElementById(`error-code-${type}`);
@@ -574,7 +547,7 @@ async function verifyCode(type) {
   errorEl.style.display = "none";
 
   if (code.length < 6) {
-    errorEl.innerText = "Digite os 6 dígitos do código.";
+    errorEl.innerText = "Digite os 6 dígitos.";
     errorEl.style.display = "block";
     return;
   }
@@ -592,34 +565,32 @@ async function verifyCode(type) {
     const data = await res.json();
 
     if (res.ok && data.success) {
-      // OTP válido — vai direto pro Canvas
-      // Auth0 já tem sessão criada, Canvas completa o login automaticamente
-    const params = new URLSearchParams({
-      response_type: "code",
-      client_id: AUTH0_CLIENT_ID,
-      redirect_uri: REDIRECT_URI,
-      scope: "openid email profile",
-      login_hint: currentEmail
-   });
 
-window.location.href = `https://${AUTH0_DOMAIN}/authorize?${params}`;
+      const params = new URLSearchParams({
+        response_type: "code",
+        client_id: AUTH0_CLIENT_ID,
+        redirect_uri: REDIRECT_URI,
+        scope: "openid email profile",
+        login_hint: currentEmail,
+        connection: "email",
+        screen_hint: "login"
+      });
+
+      window.location.href = `https://${AUTH0_DOMAIN}/authorize?${params}`;
+
     } else {
-      errorEl.innerText = data.error || "Código inválido ou expirado.";
-      errorEl.style.display = "block";
-      btn.disabled = false;
-      btn.innerText = "Confirmar";
+      throw new Error(data.error);
     }
+
   } catch (e) {
-    errorEl.innerText = "Erro de conexão. Tente novamente.";
+    errorEl.innerText = "Código inválido ou expirado.";
     errorEl.style.display = "block";
     btn.disabled = false;
     btn.innerText = "Confirmar";
   }
 }
 
-// =============================================
-// UI HELPERS
-// =============================================
+// UI
 function focusInput(type) {
   document.getElementById(`code-${type}`).focus();
 }
@@ -630,6 +601,7 @@ function handleCode(type) {
   input.value = value;
 
   const prefix = type === "mobile" ? "m" : "d";
+
   for (let i = 0; i < 6; i++) {
     const box = document.getElementById(prefix + i);
     box.innerText = value[i] || "";
@@ -641,30 +613,15 @@ function handleCode(type) {
   }
 
   if (value.length === 6 && !input.dataset.sent) {
-  input.dataset.sent = "true";
-  verifyCode(type);
-}
+    input.dataset.sent = "true";
+    verifyCode(type);
+  }
 }
 
 function goBack(type) {
   if (countdownTimer) clearInterval(countdownTimer);
-
   document.getElementById(`step-code-${type}`).style.display = "none";
   document.getElementById(`step-email-${type}`).style.display = "block";
-
-  const prefix = type === "mobile" ? "m" : "d";
-  for (let i = 0; i < 6; i++) {
-    const box = document.getElementById(prefix + i);
-    box.innerText = "";
-    box.classList.remove("active");
-  }
-  document.getElementById(prefix + "0").classList.add("active");
-  document.getElementById(`code-${type}`).value = "";
-  document.getElementById(`error-code-${type}`).style.display = "none";
-
-  const resendBtn = document.getElementById(`resend-${type}`);
-  resendBtn.disabled = true;
-  resendBtn.innerHTML = `Reenviar código (<span id="countdown-${type}">60</span>s)`;
 }
 </script>
 
