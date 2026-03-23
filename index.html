@@ -431,7 +431,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   </div>
 </div>
 
-<!-- 🔥 SOMENTE A PARTE DO SCRIPT FOI AJUSTADA -->
 <script>
 const AUTH0_DOMAIN = "sso.dozeroafluencia.com";
 const AUTH0_CLIENT_ID = "2qjWADjQ2sCid8z9QY2oM1QgUvX3nBz6";
@@ -490,21 +489,18 @@ async function sendCode(type) {
 
     if (res.ok) {
       currentEmail = email;
-
       document.getElementById(`step-email-${type}`).style.display = "none";
       document.getElementById(`step-code-${type}`).style.display = "block";
-
       document.getElementById(`emailText-${type}`).innerText =
         "Enviamos um código para " + email + ". Verifique sua caixa de entrada.";
-
       startCountdown(type);
       setTimeout(() => focusInput(type), 150);
     } else {
-      errorEl.innerText = data.error || "Erro ao enviar código.";
+      errorEl.innerText = data.error || "Erro ao enviar código. Tente novamente.";
       errorEl.style.display = "block";
     }
   } catch (e) {
-    errorEl.innerText = "Erro de conexão.";
+    errorEl.innerText = "Erro de conexão. Tente novamente.";
     errorEl.style.display = "block";
   }
 
@@ -528,13 +524,11 @@ async function resendCode(type) {
   } catch (e) {}
 
   const prefix = type === "mobile" ? "m" : "d";
-
   for (let i = 0; i < 6; i++) {
     const box = document.getElementById(prefix + i);
     box.innerText = "";
     box.classList.remove("active");
   }
-
   document.getElementById(prefix + "0").classList.add("active");
   document.getElementById(`code-${type}`).value = "";
   document.getElementById(`error-code-${type}`).style.display = "none";
@@ -543,7 +537,7 @@ async function resendCode(type) {
 }
 
 // =============================================
-// COUNTDOWN
+// COUNTDOWN 60s
 // =============================================
 function startCountdown(type) {
   const btn = document.getElementById(`resend-${type}`);
@@ -556,10 +550,8 @@ function startCountdown(type) {
 
   countdownTimer = setInterval(() => {
     seconds--;
-
     const el = document.getElementById(`countdown-${type}`);
     if (el) el.innerText = seconds;
-
     if (seconds <= 0) {
       clearInterval(countdownTimer);
       btn.disabled = false;
@@ -569,7 +561,10 @@ function startCountdown(type) {
 }
 
 // =============================================
-// VERIFY CODE (🔥 NOVO - DIRETO NO AUTH0)
+// VERIFY CODE — valida OTP no backend e
+// redireciona direto para o Canvas.
+// O Canvas vai ao SSO, Auth0 já tem sessão
+// válida e completa o login sem pedir nada.
 // =============================================
 async function verifyCode(type) {
   const code = document.getElementById(`code-${type}`).value;
@@ -578,30 +573,36 @@ async function verifyCode(type) {
 
   errorEl.style.display = "none";
 
-  if (!code || code.length < 6) {
+  if (code.length < 6) {
     errorEl.innerText = "Digite os 6 dígitos do código.";
     errorEl.style.display = "block";
     return;
   }
 
   btn.disabled = true;
-  btn.innerText = "Entrando...";
+  btn.innerText = "Verificando...";
 
   try {
-    const params = new URLSearchParams({
-      response_type: "code",
-      client_id: AUTH0_CLIENT_ID,
-      redirect_uri: REDIRECT_URI,
-      scope: "openid email profile",
-      login_hint: currentEmail,
-      connection: "email",
-      otp: code
+    const res = await fetch("/api/verify-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: currentEmail, code })
     });
 
-    window.location.href = `https://${AUTH0_DOMAIN}/authorize?${params}`;
+    const data = await res.json();
 
+    if (res.ok && data.success) {
+      // OTP válido — vai direto pro Canvas
+      // Auth0 já tem sessão criada, Canvas completa o login automaticamente
+      window.location.href = CANVAS_URL;
+    } else {
+      errorEl.innerText = data.error || "Código inválido ou expirado.";
+      errorEl.style.display = "block";
+      btn.disabled = false;
+      btn.innerText = "Confirmar";
+    }
   } catch (e) {
-    errorEl.innerText = "Erro ao tentar login.";
+    errorEl.innerText = "Erro de conexão. Tente novamente.";
     errorEl.style.display = "block";
     btn.disabled = false;
     btn.innerText = "Confirmar";
@@ -621,7 +622,6 @@ function handleCode(type) {
   input.value = value;
 
   const prefix = type === "mobile" ? "m" : "d";
-
   for (let i = 0; i < 6; i++) {
     const box = document.getElementById(prefix + i);
     box.innerText = value[i] || "";
@@ -632,10 +632,7 @@ function handleCode(type) {
     document.getElementById(prefix + value.length).classList.add("active");
   }
 
-  if (value.length === 6 && !input.dataset.sent) {
-    input.dataset.sent = "true";
-    verifyCode(type);
-  }
+  if (value.length === 6) verifyCode(type);
 }
 
 function goBack(type) {
@@ -645,16 +642,18 @@ function goBack(type) {
   document.getElementById(`step-email-${type}`).style.display = "block";
 
   const prefix = type === "mobile" ? "m" : "d";
-
   for (let i = 0; i < 6; i++) {
     const box = document.getElementById(prefix + i);
     box.innerText = "";
     box.classList.remove("active");
   }
-
   document.getElementById(prefix + "0").classList.add("active");
   document.getElementById(`code-${type}`).value = "";
   document.getElementById(`error-code-${type}`).style.display = "none";
+
+  const resendBtn = document.getElementById(`resend-${type}`);
+  resendBtn.disabled = true;
+  resendBtn.innerHTML = `Reenviar código (<span id="countdown-${type}">60</span>s)`;
 }
 </script>
 
