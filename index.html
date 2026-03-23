@@ -441,7 +441,7 @@ let currentEmail = "";
 let countdownTimer = null;
 
 // =============================================
-// GOOGLE LOGIN — com state para evitar erro
+// GOOGLE LOGIN
 // =============================================
 function loginGoogle() {
   const state = Math.random().toString(36).substring(2, 15);
@@ -452,7 +452,8 @@ function loginGoogle() {
     redirect_uri: REDIRECT_URI,
     scope: "openid email profile",
     connection: "google-oauth2",
-    state: state
+    state: state,
+    prompt: "login"
   });
 
   window.location.href = `https://${AUTH0_DOMAIN}/authorize?${params}`;
@@ -560,9 +561,10 @@ function startCountdown(type) {
 }
 
 // =============================================
-// VERIFY CODE — valida no backend, depois
-// redireciona via /authorize para o Canvas
-// receber o callback corretamente
+// VERIFY CODE — valida OTP no backend e
+// redireciona direto para o Canvas.
+// O Canvas vai ao SSO, Auth0 já tem sessão
+// válida e completa o login sem pedir nada.
 // =============================================
 async function verifyCode(type) {
   const code = document.getElementById(`code-${type}`).value;
@@ -590,21 +592,9 @@ async function verifyCode(type) {
     const data = await res.json();
 
     if (res.ok && data.success) {
-      // código válido — redireciona pelo authorize para o Canvas
-      // receber o callback e criar a sessão corretamente
-      const state = Math.random().toString(36).substring(2, 15);
-
-      const params = new URLSearchParams({
-        response_type: "code",
-        client_id: AUTH0_CLIENT_ID,
-        redirect_uri: REDIRECT_URI,
-        scope: "openid email profile",
-        connection: "email",
-        login_hint: currentEmail,
-        state: state
-      });
-
-      window.location.href = `https://${AUTH0_DOMAIN}/authorize?${params}`;
+      // OTP válido — vai direto pro Canvas
+      // Auth0 já tem sessão criada, Canvas completa o login automaticamente
+      window.location.href = CANVAS_URL;
     } else {
       errorEl.innerText = data.error || "Código inválido ou expirado.";
       errorEl.style.display = "block";
