@@ -441,7 +441,9 @@ const REDIRECT_URI = "https://membros.dozeroafluencia.com/login/oauth2/callback"
 let currentEmail = "";
 let countdownTimer = null;
 
+// =============================================
 // GOOGLE LOGIN
+// =============================================
 function loginGoogle() {
   const state = Math.random().toString(36).substring(2, 15);
 
@@ -458,7 +460,9 @@ function loginGoogle() {
   window.location.href = `https://${AUTH0_DOMAIN}/authorize?${params}`;
 }
 
+// =============================================
 // SEND CODE
+// =============================================
 async function sendCode(type) {
   const email = document.getElementById(`email-${type}`).value.trim();
   const errorEl = document.getElementById(`error-email-${type}`);
@@ -486,10 +490,13 @@ async function sendCode(type) {
 
     if (res.ok) {
       currentEmail = email;
+
       document.getElementById(`step-email-${type}`).style.display = "none";
       document.getElementById(`step-code-${type}`).style.display = "block";
+
       document.getElementById(`emailText-${type}`).innerText =
         "Enviamos um código para " + email + ". Verifique sua caixa de entrada.";
+
       startCountdown(type);
       setTimeout(() => focusInput(type), 150);
     } else {
@@ -505,40 +512,65 @@ async function sendCode(type) {
   btn.innerText = "Entrar";
 }
 
-// RESEND
+// =============================================
+// RESEND CODE
+// =============================================
 async function resendCode(type) {
-  await fetch("/api/send-code", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: currentEmail })
-  });
+  const btn = document.getElementById(`resend-${type}`);
+  btn.disabled = true;
+
+  try {
+    await fetch("/api/send-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: currentEmail })
+    });
+  } catch (e) {}
+
+  const prefix = type === "mobile" ? "m" : "d";
+
+  for (let i = 0; i < 6; i++) {
+    const box = document.getElementById(prefix + i);
+    box.innerText = "";
+    box.classList.remove("active");
+  }
+
+  document.getElementById(prefix + "0").classList.add("active");
+  document.getElementById(`code-${type}`).value = "";
+  document.getElementById(`error-code-${type}`).style.display = "none";
 
   startCountdown(type);
 }
 
+// =============================================
 // COUNTDOWN
+// =============================================
 function startCountdown(type) {
   const btn = document.getElementById(`resend-${type}`);
   let seconds = 60;
 
   btn.disabled = true;
+  btn.innerHTML = `Reenviar código (<span id="countdown-${type}">${seconds}</span>s)`;
 
   if (countdownTimer) clearInterval(countdownTimer);
 
   countdownTimer = setInterval(() => {
     seconds--;
+
     const el = document.getElementById(`countdown-${type}`);
     if (el) el.innerText = seconds;
 
     if (seconds <= 0) {
       clearInterval(countdownTimer);
       btn.disabled = false;
-      btn.innerText = "Reenviar código";
+      btn.innerHTML = "Reenviar código";
     }
   }, 1000);
 }
 
-// 🔥 VERIFY CODE (CORRIGIDO)
+// =============================================
+// VERIFY CODE (🔥 NOVO - DIRETO NO AUTH0)
+// =============================================
 async function verifyCode(type) {
   const code = document.getElementById(`code-${type}`).value;
   const errorEl = document.getElementById(`error-code-${type}`);
@@ -546,51 +578,39 @@ async function verifyCode(type) {
 
   errorEl.style.display = "none";
 
-  if (code.length < 6) {
-    errorEl.innerText = "Digite os 6 dígitos.";
+  if (!code || code.length < 6) {
+    errorEl.innerText = "Digite os 6 dígitos do código.";
     errorEl.style.display = "block";
     return;
   }
 
   btn.disabled = true;
-  btn.innerText = "Verificando...";
+  btn.innerText = "Entrando...";
 
   try {
-    const res = await fetch("/api/verify-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: currentEmail, code })
+    const params = new URLSearchParams({
+      response_type: "code",
+      client_id: AUTH0_CLIENT_ID,
+      redirect_uri: REDIRECT_URI,
+      scope: "openid email profile",
+      login_hint: currentEmail,
+      connection: "email",
+      otp: code
     });
 
-    const data = await res.json();
-
-    if (res.ok && data.success) {
-
-      const params = new URLSearchParams({
-        response_type: "code",
-        client_id: AUTH0_CLIENT_ID,
-        redirect_uri: REDIRECT_URI,
-        scope: "openid email profile",
-        login_hint: currentEmail,
-        connection: "email",
-        screen_hint: "login"
-      });
-
-      window.location.href = `https://${AUTH0_DOMAIN}/authorize?${params}`;
-
-    } else {
-      throw new Error(data.error);
-    }
+    window.location.href = `https://${AUTH0_DOMAIN}/authorize?${params}`;
 
   } catch (e) {
-    errorEl.innerText = "Código inválido ou expirado.";
+    errorEl.innerText = "Erro ao tentar login.";
     errorEl.style.display = "block";
     btn.disabled = false;
     btn.innerText = "Confirmar";
   }
 }
 
-// UI
+// =============================================
+// UI HELPERS
+// =============================================
 function focusInput(type) {
   document.getElementById(`code-${type}`).focus();
 }
@@ -620,8 +640,21 @@ function handleCode(type) {
 
 function goBack(type) {
   if (countdownTimer) clearInterval(countdownTimer);
+
   document.getElementById(`step-code-${type}`).style.display = "none";
   document.getElementById(`step-email-${type}`).style.display = "block";
+
+  const prefix = type === "mobile" ? "m" : "d";
+
+  for (let i = 0; i < 6; i++) {
+    const box = document.getElementById(prefix + i);
+    box.innerText = "";
+    box.classList.remove("active");
+  }
+
+  document.getElementById(prefix + "0").classList.add("active");
+  document.getElementById(`code-${type}`).value = "";
+  document.getElementById(`error-code-${type}`).style.display = "none";
 }
 </script>
 
